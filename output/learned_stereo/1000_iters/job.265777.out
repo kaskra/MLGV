@@ -1,0 +1,25 @@
+KITTI data loaded (30 images)!
+Starting training loop.
+Loss (0000 it):0.1843 	Accuracy: 0.789
+Loss (0050 it):0.1902 	Accuracy: 0.789
+Loss (0100 it):0.1882 	Accuracy: 0.805
+Loss (0150 it):0.1919 	Accuracy: 0.828
+Loss (0200 it):0.1872 	Accuracy: 0.797
+Loss (0250 it):0.1905 	Accuracy: 0.805
+Loss (0300 it):0.1875 	Accuracy: 0.836
+Loss (0350 it):0.1883 	Accuracy: 0.836
+Loss (0400 it):0.1846 	Accuracy: 0.859
+Loss (0450 it):0.1827 	Accuracy: 0.844
+Loss (0500 it):0.1915 	Accuracy: 0.828
+Loss (0550 it):0.1915 	Accuracy: 0.844
+Loss (0600 it):0.1838 	Accuracy: 0.852
+Loss (0650 it):0.1867 	Accuracy: 0.891
+Loss (0700 it):0.1887 	Accuracy: 0.820
+Loss (0750 it):0.1898 	Accuracy: 0.828
+Loss (0800 it):0.1845 	Accuracy: 0.898
+Loss (0850 it):0.1880 	Accuracy: 0.836
+Loss (0900 it):0.1894 	Accuracy: 0.875
+Loss (0950 it):0.1832 	Accuracy: 0.797
+Finished training!
+Saved model checkpoint.
+DONE!

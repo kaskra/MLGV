@@ -7,7 +7,7 @@ import os
 import sys
 import numpy as np
 import torch
-from tqdm import tqdm
+
 from torch import nn
 from torch.nn import functional
 from stereo_batch_provider import KITTIDataset, PatchProvider
@@ -28,7 +28,7 @@ class StereoMatchingNetwork(torch.nn.Module):
         # TODO: ENTER CODE HERE (EXERCISE 4.2 a))
 
         self.layers = nn.Sequential(
-            nn.Conv2d(3, filter_number, kernel_size=3),
+            nn.Conv2d(1, filter_number, kernel_size=3),
             nn.ReLU(),
             nn.Conv2d(filter_number, filter_number, kernel_size=3),
             nn.ReLU(),
@@ -36,8 +36,7 @@ class StereoMatchingNetwork(torch.nn.Module):
             nn.ReLU(),
             nn.Conv2d(filter_number, filter_number, kernel_size=3)
         )
-
-
+        self.layers.to(gpu)
 
     def forward(self, X):
         """ The forward pass of the network. Returns the features for a given image patch.
@@ -55,13 +54,10 @@ class StereoMatchingNetwork(torch.nn.Module):
         # TODO: ENTER CODE HERE (EXERCISE 4.2 a))
 
         x = X.permute((0, 3, 1, 2))
-
-        print(X.shape)
-        out = self.layers(X)
+        out = self.layers(x)
         out = functional.normalize(out, dim=1, p=2)
 
         out = out.permute((0, 2, 3, 1))
-
         return out
 
 
@@ -80,7 +76,7 @@ def save_loss_plot(loss, out_file='./output/learned_stereo/loss.png'):
     # TODO: ENTER CODE HERE (EXERCISE 4.2 c))
 
     indices = list(range(len(loss)))
-    plt.plot()
+    plt.plot(indices, loss)
     plt.ylabel("Loss")
     plt.xlabel("Iterations")
     plt.savefig(out_file, bbox_inches='tight')
@@ -168,11 +164,22 @@ def calculate_similarity_score(infer_similarity_metric, Xl, Xr):
     Fl = infer_similarity_metric(Xl)
     Fr = infer_similarity_metric(Xr)
 
-    return torch.dot(Fl, Fr) 
+    scores = []
+
+    for i in range(len(Fl)):
+        l = Fl[i].squeeze()
+        r = Fr[i].squeeze()
+
+        score = torch.matmul(l, r)
+        scores.append(score)
+
+    res = torch.tensor(scores, requires_grad=True).cuda()
+    
+    return res
 
 
 
-def training_loop(infer_similarity_metric, patches, optimizer, iterations=1000, batch_size=128):
+def training_loop(infer_similarity_metric, patches, optimizer, iterations=1000, batch_size=128, out_dir=''):
     ''' Runs the training loop of the siamese network.
     
     ---------    
@@ -187,11 +194,10 @@ def training_loop(infer_similarity_metric, patches, optimizer, iterations=1000, 
     loss_list = []
     try:
         print("Starting training loop.")
-        for idx, batch in tqdm(zip(range(iterations), patches.iterate_batches(batch_size))):
+        for idx, batch in zip(range(iterations), patches.iterate_batches(batch_size)):
             # Extract the batches and labels
             Xl, Xr_pos, Xr_neg = batch
-            # label = torch.eye(2).cuda()[[0]*len(Xl)]  # label is always [1, 0]
-            label = torch.eye(2)[[0]*len(Xl)]  # label is always [1, 0]
+            label = torch.eye(2).cuda()[[0]*len(Xl)]  # label is always [1, 0]
 
             # calculate the similarity score
             score_pos = calculate_similarity_score(infer_similarity_metric, Xl, Xr_pos)
@@ -213,7 +219,7 @@ def training_loop(infer_similarity_metric, patches, optimizer, iterations=1000, 
     finally:
         patches.stop()
         with torch.no_grad():
-            save_loss_plot(loss_list)
+            save_loss_plot(loss_list, os.path.join(out_dir, 'loss.png'))
         print("Finished training!")
 
 
@@ -340,7 +346,7 @@ def main(argv):
 
         # Start training loop
         training_loop(infer_similarity_metric, patches, optimizer,
-                      iterations=args.iterations, batch_size=args.batch_size)
+                      iterations=args.iterations, batch_size=args.batch_size, out_dir=out_dir)
         # Save checkpoint
         torch.save(infer_similarity_metric, model_file)
         print('Saved model checkpoint.')
